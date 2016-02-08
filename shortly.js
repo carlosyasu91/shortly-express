@@ -4,6 +4,7 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var cookieParser = require( 'cookie-parser' );
 var session = require( 'express-session' );
+var url = require( 'url' );
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -30,6 +31,7 @@ var restrict = function( request, response, next ) {
   if( request.session.user ) {
     next();
   } else {
+    request.session.target = url.parse( request.url ).pathname;
     request.session.error = 'Please log in.';
     response.redirect( '/login' );
   }
@@ -90,6 +92,23 @@ function(req, res) {
 /************************************************************/
 app.get( '/login', function( request, response ) {
   response.render( 'login' );
+} );
+
+app.post( '/login', function( request, response ){
+  var username = request.body.username;
+  var password = request.body.password;
+
+  if( username === 'Phillip' && password === 'Phillip' ) {
+    // username and password is correct, log in
+    request.session.regenerate( function () {
+      request.session.user = username;
+      response.redirect('/');
+      // response.redirect( request.session.target );
+    } );
+  } else {
+    // username & password incorrect
+    response.redirect( '/login' );
+  }
 } );
 
 /************************************************************/
