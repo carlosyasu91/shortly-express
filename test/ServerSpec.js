@@ -63,7 +63,7 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done) {
+    beforeEach(function(done) {
       // create a user that we can then log-in with
       new User({
         'username': 'Phillip',
@@ -196,7 +196,7 @@ describe('', function() {
         });
       });
 
-      xit('Returns all of the links to display on the links page', function(done) {
+      it('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
           'uri': 'http://127.0.0.1:4568/links'
@@ -238,7 +238,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function() {
+  describe('Account Creation:', function() {
 
     it('Signup creates a user record', function(done) {
       var options = {
@@ -265,6 +265,27 @@ describe('', function() {
               message: 'Failed to create test setup data'
             };
           });
+      });
+    });
+
+    it('Redirects to signup when user already exists', function(done){
+      new User({
+        'username': 'Phillip',
+        'password': 'Phillip'
+      }).save().then(function() {
+        var options = {
+          'method': 'POST',
+          'uri': 'http://127.0.0.1:4568/signup',
+          'json': {
+            'username': 'Phillip',
+            'password': 'Phillip'
+          }
+        };
+
+        request(options, function(error, res, body) {
+          expect(res.headers.location).to.equal('/signup');
+          done();
+        });  
       });
     });
 
