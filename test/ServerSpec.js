@@ -395,6 +395,7 @@ describe('', function() {
           expect( res.headers.location ).to.equal( '/' );
           requestWithSession( { 'method': 'GET', 'uri': URI + ':' + PORT + '/logout' }, function( err, res, body ) {
             expect( res.headers.location ).to.equal( '/login' );
+            done();
           } );
         } );
       } );
