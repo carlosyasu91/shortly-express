@@ -5,6 +5,8 @@ var bodyParser = require('body-parser');
 var cookieParser = require( 'cookie-parser' );
 var session = require( 'express-session' );
 var url = require( 'url' );
+var passport = require('passport');
+var GithubStrategy = require('passport-github').Strategy;
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -26,17 +28,32 @@ app.use( cookieParser( 'short.ly' ) );
 app.use( session( { secret: 'short.ly' } ) );
 app.use(express.static(__dirname + '/public'));
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 var restrict = function( request, response, next ) {
-  if( request.session.user ) {
-    next();
+  if( request.isAuthenticated() ) {
+    return next();
   } else {
-    request.session.target = url.parse( request.url ).pathname;
     request.session.error = 'Please log in.';
     response.redirect( '/login' );
   }
 };
 
+passport.serializeUser(function(user, done){
+  console.log('serializeUser: ' + user.get('oauthID'));
+  done(null, user.get('oauthID'));
+});
+
+passport.deserializeUser(function(id, done){
+  User.where({oauthID: id}).fetch()
+  .then(function(user){
+    console.log(user);
+    done(null, user);
+  }, function(err){
+    done(err, null);
+  });
+});
 
 app.get('/', restrict,
 function(req, res) {
@@ -90,88 +107,23 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-app.get( '/login', function( request, response ) {
-  response.render( 'login' );
-} );
-
-app.post( '/login', function( request, response ){
-  var username = request.body.username;
-  var password = request.body.password;
-  User.where( { username: username } ).fetch().then( function( user ) {
-    // user is now the model object
-    // or null if user was not found
-    // if null,
-    console.log( user );
-    if( user === null ) {
-      // redirect to signup -- the user does not exist
-      response.redirect( '/signup' );
-    // otherwise,
-    } else {
-      // check the password
-      user.checkPassword( password ).then( function( same ) {
-
-        // if the password is correct,
-        if ( same ) {
-          // save user to session
-          request.session.regenerate( function() {
-            request.session.user = user.get( 'username' );
-            // redirect to home
-            response.redirect( '/' ); 
-          } );
-        // otherwise,
-        } else {
-          // redirect to login 
-          response.redirect( '/login' );
-        }
-          
-      },
-      function( err ) {
-        throw new Error( 'Error checking password.' );
-      } );
-    }
-  }, function( err ) {
-    throw new Error( 'Error fetching user' );
-  } ); 
-
-} );
-
-app.get( '/signup', function(request, response){
-  response.render('signup');
-});
-
-app.post('/signup', function(request, response){
-  var username = request.body.username;
-  var password = request.body.password;
-  User.where({username: username}).fetch().then( function(user){
-    //if user already exists
-    if (user) {
-      //redirect to signup and give an error
-      request.session.error = 'User already exists';
-      response.redirect('/signup');
-    //otherwise
-    } else {
-      //create a new user with username and password
-      new User({
-        'username': username,
-        'password': password
-      }).save().then(function(reply){
-        //sign the user in and redirect to /index
-        console.log('New user created ' + username);
-        request.session.regenerate( function(){
-          request.session.user = username;
-          response.redirect('/');
-        }, function(error){
-          throw new Error(error + 'Problem creating new user');
-        });
-      });
-    }
+app.get('/auth/github', 
+  passport.authenticate('github'),
+  function(req, res){});
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login'}),
+  function(req, res){
+    res.redirect('/');
   });
+
+app.get('/login', function(req, res){
+  res.render('login');
 });
+  
 
 app.get( '/logout', function(request, response){
-  request.session.destroy(function(){
-    response.redirect('/login');
-  });
+  req.logout();
+  res.redirect('/login');
 });
 
 /************************************************************/
