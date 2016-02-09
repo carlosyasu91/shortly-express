@@ -97,18 +97,53 @@ app.get( '/login', function( request, response ) {
 app.post( '/login', function( request, response ){
   var username = request.body.username;
   var password = request.body.password;
+  User.where( { username: username } ).fetch().then( function( user ) {
+    // user is now the model object
+    // or null if user was not found
+    // if null,
+    console.log( user );
+    if( user === null ) {
+      // redirect to signup -- the user does not exist
+      response.redirect( '/signup' );
+    // otherwise,
+    } else {
+      // check the password
+      user.checkPassword( password ).then( function( same ) {
 
-  if( username === 'Phillip' && password === 'Phillip' ) {
-    // username and password is correct, log in
-    request.session.regenerate( function () {
-      request.session.user = username;
-      response.redirect('/');
-      // response.redirect( request.session.target );
-    } );
-  } else {
-    // username & password incorrect
-    response.redirect( '/login' );
-  }
+        // if the password is correct,
+        if ( same ) {
+          // save user to session
+          request.session.regenerate( function() {
+            request.session.user = user.get( 'username' );
+            // redirect to home
+            response.redirect( '/' ); 
+          } );
+        // otherwise,
+        } else {
+          // redirect to login 
+          response.redirect( '/login' );
+        }
+          
+      },
+      function( err ) {
+        throw new Error( 'Error checking password.' );
+      } );
+    }
+  }, function( err ) {
+    throw new Error( 'Error fetching user' );
+  } ); 
+
+  // if( username === 'Phillip' && password === 'Phillip' ) {
+  //   // username and password is correct, log in
+  //   request.session.regenerate( function () {
+  //     request.session.user = username;
+  //     response.redirect('/');
+  //     // response.redirect( request.session.target );
+  //   } );
+  // } else {
+  //   // username & password incorrect
+  //   response.redirect( '/login' );
+  // }
 } );
 
 /************************************************************/
