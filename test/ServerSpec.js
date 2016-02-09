@@ -7,6 +7,9 @@ var User = require('../app/models/user');
 var Links = require('../app/collections/links');
 var Link = require('../app/models/link');
 
+var URI = 'http://127.0.0.1';
+var PORT = '4568';
+
 /************************************************************/
 // Mocha doesn't have a way to designate pending before blocks.
 // Mimic the behavior of xit and xdescribe with xbeforeEach.
@@ -21,7 +24,7 @@ describe('', function() {
 
   beforeEach(function() {
     // log out currently signed in user
-    request('http://127.0.0.1:4568/logout', function(error, res, body) {});
+    request(URI + ':' + PORT + '/logout', function(error, res, body) {});
 
     // delete link for roflzoo from db so it can be created later for the test
     db.knex('urls')
@@ -72,7 +75,7 @@ describe('', function() {
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
+          'uri': URI + ':' + PORT + '/login',
           'json': {
             'username': 'Phillip',
             'password': 'Phillip'
@@ -88,7 +91,7 @@ describe('', function() {
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/links',
+        'uri': URI + ':' + PORT + '/links',
         'json': {
           'url': 'definitely not a valid url'
         }
@@ -106,7 +109,7 @@ describe('', function() {
       var options = {
         'method': 'POST',
         'followAllRedirects': true,
-        'uri': 'http://127.0.0.1:4568/links',
+        'uri': URI + ':' + PORT + '/links',
         'json': {
           'url': 'http://roflzoo.com/'
         }
@@ -159,7 +162,7 @@ describe('', function() {
         link = new Link({
           url: 'http://roflzoo.com/',
           title: 'Funny pictures of animals, funny dog pictures',
-          baseUrl: 'http://127.0.0.1:4568'
+          baseUrl: URI + ':' + PORT + ''
         });
         link.save().then(function() {
           done();
@@ -170,7 +173,7 @@ describe('', function() {
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/links',
+          'uri': URI + ':' + PORT + '/links',
           'json': {
             'url': 'http://roflzoo.com/'
           }
@@ -186,7 +189,7 @@ describe('', function() {
       it('Shortcode redirects to correct url', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/' + link.get('code')
+          'uri': URI + ':' + PORT + '/' + link.get('code')
         };
 
         requestWithSession(options, function(error, res, body) {
@@ -199,7 +202,7 @@ describe('', function() {
       it('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/links'
+          'uri': URI + ':' + PORT + '/links'
         };
 
         requestWithSession(options, function(error, res, body) {
@@ -216,21 +219,21 @@ describe('', function() {
   describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/', function(error, res, body) {
+      request(URI + ':' + PORT + '/', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
     });
 
     it('Redirects to login page if a user tries to create a link and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/create', function(error, res, body) {
+      request(URI + ':' + PORT + '/create', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
     });
 
     it('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/links', function(error, res, body) {
+      request(URI + ':' + PORT + '/links', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
@@ -243,7 +246,7 @@ describe('', function() {
     it('Signup creates a user record', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': URI + ':' + PORT + '/signup',
         'json': {
           'username': 'Svnh',
           'password': 'Svnh'
@@ -275,7 +278,7 @@ describe('', function() {
       }).save().then(function() {
         var options = {
           'method': 'POST',
-          'uri': 'http://127.0.0.1:4568/signup',
+          'uri': URI + ':' + PORT + '/signup',
           'json': {
             'username': 'Phillip',
             'password': 'Phillip'
@@ -292,7 +295,7 @@ describe('', function() {
     it('Signup logs in a new user', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': URI + ':' + PORT + '/signup',
         'json': {
           'username': 'Phillip',
           'password': 'Phillip'
@@ -324,7 +327,7 @@ describe('', function() {
     it('Logs in existing users', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': URI + ':' + PORT + '/login',
         'json': {
           'username': 'Phillip',
           'password': 'Phillip'
@@ -340,7 +343,7 @@ describe('', function() {
     it('Wrong passwords redirect to login page', function( done ) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': URI + ':' + PORT + '/login',
         'json': {
           'username': 'Phillip',
           'password': 'Fred'
@@ -356,7 +359,7 @@ describe('', function() {
     it('Users that do not exist are asked to sign up', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': URI + ':' + PORT + '/login',
         'json': {
           'username': 'Fred',
           'password': 'Fred'
@@ -370,5 +373,33 @@ describe('', function() {
     });
 
   }); // 'Account Login'
+
+  describe( 'Account logout:', function() {
+    var requestWithSession = request.defaults( {jar: true} );
+
+    beforeEach( function( done ) {
+      new User({
+        'username': 'Phillip',
+        'password': 'Phillip'
+      }).save().then( function() {
+        var options = {
+          'method': 'POST',
+          'uri': URI + ':' + PORT + '/login',
+          'json': {
+            'username': 'Phillip',
+            'password': 'Phillip'
+          }
+        };
+
+        requestWithSession( options, function( err, res, body ) {
+          expect( res.headers.location ).to.equal( '/' );
+          requestWithSession( { 'method': 'GET', 'uri': URI + ':' + PORT + '/logout' }, function( err, res, body ) {
+            expect( res.headers.location ).to.equal( '/login' );
+          } );
+        } );
+      } );
+    } );
+
+  } ); // 'Account logout'
 
 });
