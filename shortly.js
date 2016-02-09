@@ -133,18 +133,39 @@ app.post( '/login', function( request, response ){
     throw new Error( 'Error fetching user' );
   } ); 
 
-  // if( username === 'Phillip' && password === 'Phillip' ) {
-  //   // username and password is correct, log in
-  //   request.session.regenerate( function () {
-  //     request.session.user = username;
-  //     response.redirect('/');
-  //     // response.redirect( request.session.target );
-  //   } );
-  // } else {
-  //   // username & password incorrect
-  //   response.redirect( '/login' );
-  // }
 } );
+
+app.get( '/signup', function(request, response){
+  response.render('signup');
+});
+app.post('/signup', function(request, response){
+  var username = request.body.username;
+  var password = request.body.password;
+  User.where({username: username}).fetch().then( function(user){
+    //if user already exists
+    if (user) {
+      //redirect to signup and give an error
+      request.session.error = 'User already exists';
+      response.redirect('/signup');
+    //otherwise
+    } else {
+      //create a new user with username and password
+      new User({
+        'username': username,
+        'password': password
+      }).save().then(function(reply){
+        //sign the user in and redirect to /index
+        console.log('New user created ' + username);
+        request.session.regenerate( function(){
+          request.session.user = username;
+          response.redirect('/');
+        }, function(error){
+          throw new Error(error + 'Problem creating new user');
+        });
+      });
+    }
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
