@@ -196,7 +196,7 @@ describe('', function() {
         });
       });
 
-      it('Returns all of the links to display on the links page', function(done) {
+      xit('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
           'uri': 'http://127.0.0.1:4568/links'
@@ -213,7 +213,7 @@ describe('', function() {
 
   }); // 'Link creation'
 
-  xdescribe('Privileged Access:', function() {
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
@@ -286,10 +286,11 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function() {
+  describe('Account Login:', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
+    // refactor later to use hash and salt
     beforeEach(function(done) {
       new User({
         'username': 'Phillip',
@@ -315,7 +316,23 @@ describe('', function() {
       });
     });
 
-    it('Users that do not exist are kept on login page', function(done) {
+    it('Wrong passwords redirect to login page', function( done ) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/login',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Fred'
+        }
+      };
+
+      requestWithSession( options, function( error, res, body ) {
+        expect( res.headers.location ).to.equal( '/login' );
+        done();
+      } );
+    });
+
+    it('Users that do not exist are asked to sign up', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/login',
@@ -326,7 +343,7 @@ describe('', function() {
       };
 
       requestWithSession(options, function(error, res, body) {
-        expect(res.headers.location).to.equal('/login');
+        expect(res.headers.location).to.equal('/signup');
         done();
       });
     });
