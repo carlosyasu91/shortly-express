@@ -122,8 +122,8 @@ app.get('/login', function(req, res){
   
 
 app.get( '/logout', function(request, response){
-  req.logout();
-  res.redirect('/login');
+  request.logout();
+  response.redirect('/login');
 });
 
 /************************************************************/
